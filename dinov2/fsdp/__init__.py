@@ -68,7 +68,6 @@ def free_if_fsdp(x):
         true_list = [True for h in handles]
         _reshard(x, handles, true_list)
 
-
 def get_fsdp_modules(x):
     return FSDP.fsdp_modules(x)
 
