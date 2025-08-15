@@ -10,7 +10,18 @@ import mmcv
 import numpy as np
 import torch
 import torch.nn as nn
-from mmcv.runner import BaseModule, auto_fp16, force_fp32
+from mmengine.model import BaseModule
+
+# mmcv.runner.auto_fp16/force_fp32
+def auto_fp16(*args, **kwargs):
+    def deco(func):
+        return func
+    return deco
+
+def force_fp32(*args, **kwargs):
+    def deco(func):
+        return func
+    return deco
 
 from ...ops import resize
 from ..builder import build_loss

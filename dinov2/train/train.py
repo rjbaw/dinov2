@@ -151,6 +151,27 @@ def do_train(cfg, model, resume=False):
     # checkpointer
     checkpointer = FSDPCheckpointer(model, cfg.train.output_dir, optimizer=optimizer, save_to_disk=True)
 
+    # Allow old checkpoints
+    try:
+        from torch.serialization import add_safe_globals as _add_safe_globals  
+        import numpy as _np
+        try:
+            from numpy.core.multiarray import scalar as _np_scalar  
+        except Exception:
+            from numpy._core.multiarray import scalar as _np_scalar  
+        _safe = [_np_scalar, _np.dtype]
+        try:
+            import numpy.dtypes as _np_dtypes  
+            for _name in dir(_np_dtypes):
+                if _name.endswith("DType"):
+                    _obj = getattr(_np_dtypes, _name)
+                    if isinstance(_obj, type):
+                        _safe.append(_obj)
+        except Exception:
+            pass
+        _add_safe_globals(_safe)
+    except Exception:
+        pass
     start_iter = checkpointer.resume_or_load(cfg.MODEL.WEIGHTS, resume=resume).get("iteration", -1) + 1
 
     OFFICIAL_EPOCH_LENGTH = cfg.train.OFFICIAL_EPOCH_LENGTH

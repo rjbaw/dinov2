@@ -18,6 +18,28 @@ from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from torch.distributed.fsdp.wrap import ModuleWrapPolicy
 from torch.distributed.fsdp._runtime_utils import _reshard
 
+# Register safe globals
+try:
+    from torch.serialization import add_safe_globals as _add_safe_globals
+    try:
+        from numpy.core.multiarray import scalar as _np_scalar  
+    except Exception:
+        from numpy._core.multiarray import scalar as _np_scalar  
+    import numpy as _np  
+    _safe = [_np_scalar, _np.dtype]
+    
+    try:
+        import numpy.dtypes as _np_dtypes  
+        for _name in dir(_np_dtypes):
+            if _name.endswith("DType"):
+                _obj = getattr(_np_dtypes, _name)
+                if isinstance(_obj, type):
+                    _safe.append(_obj)
+    except Exception:
+        pass
+    _add_safe_globals(_safe)
+except Exception:
+    pass
 
 def get_fsdp_wrapper(model_cfg, modules_to_wrap=set()):
     sharding_strategy_dict = {
@@ -61,10 +83,11 @@ def is_fsdp(x):
 def is_sharded_fsdp(x):
     return is_fsdp(x) and x.sharding_strategy is not ShardingStrategy.NO_SHARD
 
-def free_if_fsdp(x: FSDP):
-    if is_sharded_fsdp(x) and x._has_params:
-        handle = x._handle
-        _reshard(x, handle, True)
+def free_if_fsdp(x):
+    if is_sharded_fsdp(x):
+        handles = x._handles
+        true_list = [True for h in handles]
+        _reshard(x, handles, true_list)
 
 def get_fsdp_modules(x):
     return FSDP.fsdp_modules(x)

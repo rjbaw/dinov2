@@ -8,7 +8,13 @@ from collections import OrderedDict
 
 import torch
 import torch.distributed as dist
-from mmcv.runner import BaseModule, auto_fp16
+from mmengine.model import BaseModule
+
+# mmcv 2.x 
+def auto_fp16(*args, **kwargs):
+    def deco(func):
+        return func
+    return deco
 
 
 class BaseDepther(BaseModule, metaclass=ABCMeta):
